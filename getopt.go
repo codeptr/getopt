@@ -42,7 +42,7 @@
 //
 // This package also defines a FlagSet wrapping the standard flag.FlagSet.
 //
-// Caveat
+// # Caveat
 //
 // In general Go flag parsing is preferred for new programs, because
 // it is not as pedantic about the number of dashes used to invoke
@@ -242,7 +242,10 @@ func (f *FlagSet) defaultUsage() {
 
 // Parse parses the command-line flags from os.Args[1:].
 func Parse() {
-	CommandLine.Parse(os.Args[1:])
+	err := CommandLine.Parse(os.Args[1:])
+	if err != nil {
+		os.Exit(2)
+	}
 }
 
 // Parse parses flag definitions from the argument list,
@@ -254,13 +257,15 @@ func (f *FlagSet) Parse(args []string) error {
 	for len(args) > 0 {
 		arg := args[0]
 		if len(arg) < 2 || arg[0] != '-' {
-			break
+			// break
+			return f.failf("unexpected argument: %s", arg)
 		}
 		args = args[1:]
 		if arg[:2] == "--" {
 			// Process single long option.
 			if arg == "--" {
-				break
+				// break
+				return f.failf("unexpected argument: %s", arg)
 			}
 			name := arg[2:]
 			value := ""
@@ -270,10 +275,12 @@ func (f *FlagSet) Parse(args []string) error {
 				haveValue = true
 			}
 			fg := f.Lookup(name)
+			if name == "h" || name == "help" {
+				// TODO ErrHelp
+				f.Usage()
+				os.Exit(0)
+			}
 			if fg == nil {
-				if name == "h" || name == "help" {
-					// TODO ErrHelp
-				}
 				return f.failf("flag provided but not defined: --%s", name)
 			}
 			if b, ok := fg.Value.(boolFlag); ok && b.IsBoolFlag() {
@@ -301,6 +308,7 @@ func (f *FlagSet) Parse(args []string) error {
 		}
 
 		// Process one or more short options.
+		// Such as (tar -xzvf file.tar.gz)
 		for arg = arg[1:]; arg != ""; {
 			r, size := utf8.DecodeRuneInString(arg)
 			if r == utf8.RuneError && size == 1 {
@@ -309,10 +317,11 @@ func (f *FlagSet) Parse(args []string) error {
 			name := arg[:size]
 			arg = arg[size:]
 			fg := f.Lookup(name)
+			if name == "h" {
+				f.Usage()
+				os.Exit(0)
+			}
 			if fg == nil {
-				if name == "h" {
-					// TODO ErrHelp
-				}
 				return f.failf("flag provided but not defined: -%s", name)
 			}
 			if b, ok := fg.Value.(boolFlag); ok && b.IsBoolFlag() {
