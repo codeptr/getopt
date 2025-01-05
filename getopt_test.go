@@ -148,3 +148,22 @@ func TestHelpText(t *testing.T) {
 		t.Errorf("have<\n%s>\nwant<\n%s>", out, wantHelpText)
 	}
 }
+
+func TestIsSet(t *testing.T) {
+	name := "c"
+	for _, tt := range tests {
+		tf := newTestFlagSet(t)
+		ok := tf.flag.IsSet(strings.Fields(tt.cmd), name)
+		if ok {
+			fmt.Printf("%s is in %v\n", name, tt.cmd)
+		}
+	}
+	name = "aah"
+	for _, tt := range tests {
+		tf := newTestFlagSet(t)
+		ok := tf.flag.IsSet(strings.Fields(tt.cmd), name)
+		if ok {
+			fmt.Printf("%s is in %v\n", name, tt.cmd)
+		}
+	}
+}

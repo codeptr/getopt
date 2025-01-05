@@ -348,6 +348,52 @@ func (f *FlagSet) Parse(args []string) error {
 	return nil
 }
 
+func IsSet(name string) bool {
+	return CommandLine.IsSet(os.Args[1:], name)
+}
+
+func (f *FlagSet) IsSet(args []string, name string) bool {
+	for len(args) > 0 {
+		arg := args[0]
+		args = args[1:]
+		if len(arg) < 2 || arg[0] != '-' {
+			continue
+		}
+		if arg[:2] == "--" {
+			// Process single long option.
+			if arg == "--" {
+				continue
+			}
+			flag := arg[2:]
+			if i := strings.Index(flag, "="); i >= 0 {
+				flag = flag[:i]
+			}
+			fg := f.Lookup(name)
+			if fg != nil && name == flag {
+				return true
+			}
+			continue
+		}
+
+		// Process one or more short options.
+		// Such as (tar -xzvf file.tar.gz)
+		for arg = arg[1:]; arg != ""; {
+			r, size := utf8.DecodeRuneInString(arg)
+			if r == utf8.RuneError {
+				break
+			}
+			flag := arg[:size]
+			arg = arg[size:]
+			fg := f.Lookup(name)
+			if fg != nil && name == flag {
+				return true
+			}
+			continue
+		}
+	}
+	return false
+}
+
 // PrintDefaults is like flag.PrintDefaults but includes information
 // about short/long alias pairs and prints the correct syntax for
 // long flags.
