@@ -353,43 +353,51 @@ func IsSet(name string) bool {
 }
 
 func (f *FlagSet) IsSet(args []string, name string) bool {
-	for len(args) > 0 {
-		arg := args[0]
-		args = args[1:]
-		if len(arg) < 2 || arg[0] != '-' {
-			continue
-		}
-		if arg[:2] == "--" {
-			// Process single long option.
-			if arg == "--" {
+	b := args
+	names := []string{name}
+	if x, ok := f.alias[name]; ok {
+		names = append(names, x)
+	}
+	for _, name = range names {
+		for len(args) > 0 {
+			arg := args[0]
+			args = args[1:]
+			if len(arg) < 2 || arg[0] != '-' {
 				continue
 			}
-			flag := arg[2:]
-			if i := strings.Index(flag, "="); i >= 0 {
-				flag = flag[:i]
+			if arg[:2] == "--" {
+				// Process single long option.
+				if arg == "--" {
+					continue
+				}
+				flag := arg[2:]
+				if i := strings.Index(flag, "="); i >= 0 {
+					flag = flag[:i]
+				}
+				fg := f.Lookup(name)
+				if fg != nil && name == flag {
+					return true
+				}
+				continue
 			}
-			fg := f.Lookup(name)
-			if fg != nil && name == flag {
-				return true
-			}
-			continue
-		}
 
-		// Process one or more short options.
-		// Such as (tar -xzvf file.tar.gz)
-		for arg = arg[1:]; arg != ""; {
-			r, size := utf8.DecodeRuneInString(arg)
-			if r == utf8.RuneError {
-				break
+			// Process one or more short options.
+			// Such as (tar -xzvf file.tar.gz)
+			for arg = arg[1:]; arg != ""; {
+				r, size := utf8.DecodeRuneInString(arg)
+				if r == utf8.RuneError {
+					break
+				}
+				flag := arg[:size]
+				arg = arg[size:]
+				fg := f.Lookup(name)
+				if fg != nil && name == flag {
+					return true
+				}
+				continue
 			}
-			flag := arg[:size]
-			arg = arg[size:]
-			fg := f.Lookup(name)
-			if fg != nil && name == flag {
-				return true
-			}
-			continue
 		}
+		args = b
 	}
 	return false
 }

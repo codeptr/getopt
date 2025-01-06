@@ -150,20 +150,14 @@ func TestHelpText(t *testing.T) {
 }
 
 func TestIsSet(t *testing.T) {
-	name := "c"
-	for _, tt := range tests {
-		tf := newTestFlagSet(t)
-		ok := tf.flag.IsSet(strings.Fields(tt.cmd), name)
-		if ok {
-			fmt.Printf("%s is in %v\n", name, tt.cmd)
-		}
-	}
-	name = "aah"
-	for _, tt := range tests {
-		tf := newTestFlagSet(t)
-		ok := tf.flag.IsSet(strings.Fields(tt.cmd), name)
-		if ok {
-			fmt.Printf("%s is in %v\n", name, tt.cmd)
+	names := []string{"aah", "beeta", "c", "d"}
+	for _, name := range names {
+		for _, tt := range tests {
+			tf := newTestFlagSet(t)
+			ok := tf.flag.IsSet(strings.Fields(tt.cmd), name)
+			if ok {
+				fmt.Printf("%s is in %v\n", name, tt.cmd)
+			}
 		}
 	}
 }
